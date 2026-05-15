@@ -53,12 +53,14 @@ void AUDPReceiver::Tick(float DeltaTime)
 			ReceivedData.Add(0);
 			FString Mensaje = FString(ANSI_TO_TCHAR(reinterpret_cast<const char*>(ReceivedData.GetData())));
 
-			// --- Recortar los números ---
+			// --- MAGIA NUEVA: Recortar los números ---
 			TArray<FString> Partes;
+			// Separamos el mensaje por espacios
 			Mensaje.ParseIntoArray(Partes, TEXT(" "), true);
 
 			if (Partes.Num() >= 3)
 			{
+				// Le quitamos las letras y convertimos el texto a número decimal (Atof)
 				GyroX = FCString::Atof(*Partes[0].Replace(TEXT("X:"), TEXT("")));
 				GyroY = FCString::Atof(*Partes[1].Replace(TEXT("Y:"), TEXT("")));
 				GyroZ = FCString::Atof(*Partes[2].Replace(TEXT("Z:"), TEXT("")));
