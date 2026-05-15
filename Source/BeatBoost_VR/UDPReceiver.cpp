@@ -6,9 +6,9 @@ AUDPReceiver::AUDPReceiver()
 	ListenSocket = nullptr;
 
 	// Iniciamos las variables en 0
-	GyroX = 0.0f;
-	GyroY = 0.0f;
-	GyroZ = 0.0f;
+	AccelX = 0.0f;
+	AccelY = 0.0f;
+	AccelZ = 0.0f;
 }
 
 void AUDPReceiver::BeginPlay()
@@ -59,12 +59,13 @@ void AUDPReceiver::Tick(float DeltaTime)
 
 			if (Partes.Num() >= 3)
 			{
-				GyroX = FCString::Atof(*Partes[0].Replace(TEXT("X:"), TEXT("")));
-				GyroY = FCString::Atof(*Partes[1].Replace(TEXT("Y:"), TEXT("")));
-				GyroZ = FCString::Atof(*Partes[2].Replace(TEXT("Z:"), TEXT("")));
+				// CAMBIO AQUÍ: Usamos las nuevas variables y buscamos AX, AY, AZ
+				AccelX = FCString::Atof(*Partes[0].Replace(TEXT("AX:"), TEXT("")));
+				AccelY = FCString::Atof(*Partes[1].Replace(TEXT("AY:"), TEXT("")));
+				AccelZ = FCString::Atof(*Partes[2].Replace(TEXT("AZ:"), TEXT("")));
 
-				// Logs para ver los valores en la consola
-				UE_LOG(LogTemp, Warning, TEXT("X: %f Y: %f Z: %f"), GyroX, GyroY, GyroZ);
+				// Logs para ver la aceleración cruda en la consola de Unreal
+				UE_LOG(LogTemp, Warning, TEXT("Accel X: %f Y: %f Z: %f"), AccelX, AccelY, AccelZ);
 			}
 		}
 	}

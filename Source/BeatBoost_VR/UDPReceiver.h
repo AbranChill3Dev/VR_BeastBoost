@@ -23,14 +23,14 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	// --- Variables que Blueprint podrá leer ---
-	UPROPERTY(BlueprintReadOnly, Category = "Giroscopio")
-	float GyroX;
+	UPROPERTY(BlueprintReadOnly, Category = "UDP")
+	float AccelX = 0.0f;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Giroscopio")
-	float GyroY;
+	UPROPERTY(BlueprintReadOnly, Category = "UDP")
+	float AccelY = 0.0f;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Giroscopio")
-	float GyroZ;
+	UPROPERTY(BlueprintReadOnly, Category = "UDP")
+	float AccelZ = 0.0f;
 
 private:
 	FSocket* ListenSocket;
