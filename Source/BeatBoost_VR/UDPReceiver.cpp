@@ -5,10 +5,15 @@ AUDPReceiver::AUDPReceiver()
 	PrimaryActorTick.bCanEverTick = true;
 	ListenSocket = nullptr;
 
-	// Iniciamos las variables en 0
+	// Iniciamos las variables de la mano IZQUIERDA en 0
 	AccelX = 0.0f;
 	AccelY = 0.0f;
 	AccelZ = 0.0f;
+
+	// Iniciamos las variables de la mano DERECHA en 0
+	RightAccelX = 0.0f;
+	RightAccelY = 0.0f;
+	RightAccelZ = 0.0f;
 }
 
 void AUDPReceiver::BeginPlay()
@@ -20,7 +25,7 @@ void AUDPReceiver::BeginPlay()
 		.AsNonBlocking().AsReusable().BoundToEndpoint(Endpoint).WithReceiveBufferSize(2 * 1024 * 1024);
 
 	if (ListenSocket) {
-		UE_LOG(LogTemp, Warning, TEXT("¡EXITO! Escuchando UDP..."));
+		UE_LOG(LogTemp, Warning, TEXT("Â¡EXITO! Escuchando UDP..."));
 	}
 }
 
@@ -53,20 +58,56 @@ void AUDPReceiver::Tick(float DeltaTime)
 			ReceivedData.Add(0);
 			FString Mensaje = FString(ANSI_TO_TCHAR(reinterpret_cast<const char*>(ReceivedData.GetData())));
 
-			// --- Recortar los números ---
+			// --- Recortar los nÃºmeros ---
 			TArray<FString> Partes;
 			Mensaje.ParseIntoArray(Partes, TEXT(" "), true);
 
 			if (Partes.Num() >= 3)
 			{
-				// CAMBIO AQUÍ: Usamos las nuevas variables y buscamos AX, AY, AZ
-				AccelX = FCString::Atof(*Partes[0].Replace(TEXT("AX:"), TEXT("")));
-				AccelY = FCString::Atof(*Partes[1].Replace(TEXT("AY:"), TEXT("")));
-				AccelZ = FCString::Atof(*Partes[2].Replace(TEXT("AZ:"), TEXT("")));
-
-				// Logs para ver la aceleración cruda en la consola de Unreal
-				UE_LOG(LogTemp, Warning, TEXT("Accel X: %f Y: %f Z: %f"), AccelX, AccelY, AccelZ);
+				// 1. Â¿Es la placa de la mano IZQUIERDA? (Empieza con AX)
+				if (Partes[0].Contains(TEXT("AX:")))
+				{
+					AccelX = FCString::Atof(*Partes[0].Replace(TEXT("AX:"), TEXT("")));
+					AccelY = FCString::Atof(*Partes[1].Replace(TEXT("AY:"), TEXT("")));
+					AccelZ = FCString::Atof(*Partes[2].Replace(TEXT("AZ:"), TEXT("")));
+					
+					// Descomentar si ocupan ver los logs en Unreal
+					// UE_LOG(LogTemp, Warning, TEXT("IZQ - X: %f Y: %f Z: %f"), AccelX, AccelY, AccelZ);
+				}
+				// 2. Â¿Es la placa de la mano DERECHA? (Empieza con RX)
+				else if (Partes[0].Contains(TEXT("RX:")))
+				{
+					RightAccelX = FCString::Atof(*Partes[0].Replace(TEXT("RX:"), TEXT("")));
+					RightAccelY = FCString::Atof(*Partes[1].Replace(TEXT("RY:"), TEXT("")));
+					RightAccelZ = FCString::Atof(*Partes[2].Replace(TEXT("RZ:"), TEXT("")));
+					
+					// Descomentar si ocupan ver los logs en Unreal
+					// UE_LOG(LogTemp, Warning, TEXT("DER - X: %f Y: %f Z: %f"), RightAccelX, RightAccelY, RightAccelZ);
+				}
 			}
 		}
 	}
+}
+
+void AUDPReceiver::MandarVibracion(FString IPObjetivo, int32 Puerto, FString Mensaje)
+{
+    // Crear un socket temporal para enviar el mensaje
+    FSocket* SocketSender = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateSocket(NAME_DGram, TEXT("UDPSender"), false);
+    if (!SocketSender) return;
+
+    // Convertir la IP de texto a formato de red
+    FIPv4Address IP;
+    FIPv4Address::Parse(IPObjetivo, IP);
+    TSharedRef<FInternetAddr> Addr = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateInternetAddr();
+    Addr->SetIp(IP.Value);
+    Addr->SetPort(Puerto);
+
+    // Convertir el texto a bytes y enviarlo
+    int32 BytesSent = 0;
+    FTCHARToUTF8 Convert(*Mensaje);
+    SocketSender->SendTo((uint8*)Convert.Get(), Convert.Length(), BytesSent, *Addr);
+
+    // Limpiar la memoria cerrando el socket
+    SocketSender->Close();
+    ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->DestroySocket(SocketSender);
 }
