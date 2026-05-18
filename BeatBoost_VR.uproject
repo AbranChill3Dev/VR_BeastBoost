@@ -39,6 +39,10 @@
 				"Android",
 				"VisionOS"
 			]
+		},
+		{
+			"Name": "ModelingToolsEditorMode",
+			"Enabled": true
 		}
 	],
 	"TargetPlatforms": [
