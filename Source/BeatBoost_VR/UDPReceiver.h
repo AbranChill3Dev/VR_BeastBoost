@@ -22,7 +22,7 @@ protected:
 public:
     virtual void Tick(float DeltaTime) override;
 
-    // ?? Aceleración cruda (por si la necesitas en Blueprint para debug) ??
+    // Aceleración cruda (debug en Blueprint)
     UPROPERTY(BlueprintReadOnly, Category = "UDP|Raw")
     float AccelX = 0.0f;
     UPROPERTY(BlueprintReadOnly, Category = "UDP|Raw")
@@ -37,14 +37,14 @@ public:
     UPROPERTY(BlueprintReadOnly, Category = "UDP|Raw")
     float RightAccelZ = 0.0f;
 
-    // ?? Posición acumulada — ESTO es lo que usarás en Blueprint ??
+    // Posición acumulada — usar en Blueprint
     UPROPERTY(BlueprintReadOnly, Category = "UDP|Haptic")
     FVector LeftHandPos = FVector::ZeroVector;
 
     UPROPERTY(BlueprintReadOnly, Category = "UDP|Haptic")
     FVector RightHandPos = FVector::ZeroVector;
 
-    // ?? Parámetros ajustables desde el Editor sin recompilar ??
+    // Parámetros ajustables desde el Editor
 
     /** Valores del sensor por debajo de esto se tratan como 0 (anti-temblor) */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP|Haptic")
@@ -62,7 +62,15 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP|Haptic")
     float MaxDisplacement = 25.0f;
 
-    // ?? Control de ejes ??
+    /** Multiplicador de movimiento para la mano izquierda (1.0 = normal, 1.5 = 50% más) */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP|Haptic")
+    float LeftMovementScale = 1.0f;
+
+    /** Multiplicador de movimiento para la mano derecha (1.0 = normal, 1.5 = 50% más) */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP|Haptic")
+    float RightMovementScale = 1.0f;
+
+    // Control de ejes — mano izquierda
 
     /** Eje del sensor que mapea a IZQUIERDA-DERECHA en Unreal (0=X, 1=Y, 2=Z) */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP|Haptic|Ejes")
@@ -80,7 +88,8 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP|Haptic|Ejes")
     bool bInvertirVertical = false;
 
-    // Para la mano derecha por separado
+    // Control de ejes — mano derecha
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP|Haptic|Ejes")
     int32 RightEjeHorizontal = 0;
 
@@ -96,7 +105,7 @@ public:
     UFUNCTION(BlueprintCallable, Category = "UDP")
     void MandarVibracion(FString IPObjetivo, int32 Puerto, FString Mensaje);
 
-    /** Llama esto desde Blueprint para resetear las manos al origen */
+    /** Resetea ambas manos al origen */
     UFUNCTION(BlueprintCallable, Category = "UDP|Haptic")
     void ResetHandPositions();
 

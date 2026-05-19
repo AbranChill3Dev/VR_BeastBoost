@@ -1,4 +1,4 @@
-#include "UDPReceiver.h"
+﻿#include "UDPReceiver.h"
 
 AUDPReceiver::AUDPReceiver()
 {
@@ -6,9 +6,9 @@ AUDPReceiver::AUDPReceiver()
     ListenSocket = nullptr;
 }
 
-// ?????????????????????????????????????????
+// ─────────────────────────────────────────
 //  BeginPlay / EndPlay
-// ?????????????????????????????????????????
+// ─────────────────────────────────────────
 
 void AUDPReceiver::BeginPlay()
 {
@@ -40,9 +40,9 @@ void AUDPReceiver::EndPlay(const EEndPlayReason::Type EndPlayReason)
     }
 }
 
-// ?????????????????????????????????????????
+// ─────────────────────────────────────────
 //  Parsing del mensaje UDP
-// ?????????????????????????????????????????
+// ─────────────────────────────────────────
 
 void AUDPReceiver::ParsePacket(const FString& Mensaje)
 {
@@ -50,7 +50,6 @@ void AUDPReceiver::ParsePacket(const FString& Mensaje)
     Mensaje.ParseIntoArray(Partes, TEXT(" "), true);
     if (Partes.Num() < 3) return;
 
-    // Extrae el n�mero despu�s del prefijo "AX:", "RX:", etc.
     auto ExtractFloat = [](const FString& Part, const TCHAR* Prefix) -> float
         {
             FString Val = Part;
@@ -58,14 +57,14 @@ void AUDPReceiver::ParsePacket(const FString& Mensaje)
             return FCString::Atof(*Val);
         };
 
-    // Mano IZQUIERDA � prefijo AX / AY / AZ
+    // Mano IZQUIERDA — prefijo AX / AY / AZ
     if (Partes[0].StartsWith(TEXT("AX:")))
     {
         AccelX = ExtractFloat(Partes[0], TEXT("AX:"));
         AccelY = ExtractFloat(Partes[1], TEXT("AY:"));
         AccelZ = ExtractFloat(Partes[2], TEXT("AZ:"));
     }
-    // Mano DERECHA � prefijo RX / RY / RZ
+    // Mano DERECHA — prefijo RX / RY / RZ
     else if (Partes[0].StartsWith(TEXT("RX:")))
     {
         RightAccelX = ExtractFloat(Partes[0], TEXT("RX:"));
@@ -77,21 +76,19 @@ void AUDPReceiver::ParsePacket(const FString& Mensaje)
 FVector AUDPReceiver::MapearEjes(const float Sensor[3], int32 EjeH, int32 EjeV,
     bool bInvH, bool bInvV) const
 {
-    // Clampear �ndices para evitar out-of-bounds
     EjeH = FMath::Clamp(EjeH, 0, 2);
     EjeV = FMath::Clamp(EjeV, 0, 2);
 
     float Horizontal = ApplyDeadZone(Sensor[EjeH]) * (bInvH ? -1.0f : 1.0f);
     float Vertical = ApplyDeadZone(Sensor[EjeV]) * (bInvV ? -1.0f : 1.0f);
 
-    // Y = horizontal (izq-der en Unreal), Z = vertical (arriba-abajo en Unreal)
-    // X = profundidad � siempre 0, no queremos movimiento en profundidad
+    // Y = horizontal (izq-der), Z = vertical (arriba-abajo), X = profundidad (siempre 0)
     return FVector(0.0f, Horizontal, Vertical);
 }
 
-// ?????????????????????????????????????????
-//  Tick � leer UDP e integrar posici�n
-// ?????????????????????????????????????????
+// ─────────────────────────────────────────
+//  Tick — leer UDP e integrar posición
+// ─────────────────────────────────────────
 
 void AUDPReceiver::Tick(float DeltaTime)
 {
@@ -102,7 +99,6 @@ void AUDPReceiver::Tick(float DeltaTime)
         ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateInternetAddr();
     uint32 Size;
 
-    // Vaciamos todo el buffer pendiente en este tick
     while (ListenSocket->HasPendingData(Size))
     {
         TArray<uint8> ReceivedData;
@@ -112,41 +108,41 @@ void AUDPReceiver::Tick(float DeltaTime)
 
         if (BytesRead > 0)
         {
-            ReceivedData.Add(0); // null-terminator para el string
+            ReceivedData.Add(0); // null-terminator
             FString Mensaje = FString(ANSI_TO_TCHAR(
                 reinterpret_cast<const char*>(ReceivedData.GetData())));
             ParsePacket(Mensaje);
         }
     }
 
-    // ?? Integrar mano IZQUIERDA ??
+    // Integrar mano IZQUIERDA
     {
         const float SensorLeft[3] = { AccelX, AccelY, AccelZ };
         FVector Delta = MapearEjes(SensorLeft,
             EjeHorizontal, EjeVertical,
             bInvertirHorizontal, bInvertirVertical);
 
-        FVector TargetPos = LeftHandPos + Delta * SensorScale;
+        FVector TargetPos = LeftHandPos + Delta * SensorScale * LeftMovementScale;
         TargetPos = TargetPos.GetClampedToSize(0.0f, MaxDisplacement);
         LeftHandPos = FMath::Lerp(LeftHandPos, TargetPos, SmoothFactor);
     }
 
-    // ?? Integrar mano DERECHA ??
+    // Integrar mano DERECHA
     {
         const float SensorRight[3] = { RightAccelX, RightAccelY, RightAccelZ };
         FVector Delta = MapearEjes(SensorRight,
             RightEjeHorizontal, RightEjeVertical,
             bRightInvertirHorizontal, bRightInvertirVertical);
 
-        FVector TargetPos = RightHandPos + Delta * SensorScale;
+        FVector TargetPos = RightHandPos + Delta * SensorScale * RightMovementScale;
         TargetPos = TargetPos.GetClampedToSize(0.0f, MaxDisplacement);
         RightHandPos = FMath::Lerp(RightHandPos, TargetPos, SmoothFactor);
     }
 }
 
-// ?????????????????????????????????????????
+// ─────────────────────────────────────────
 //  Utilidades
-// ?????????????????????????????????????????
+// ─────────────────────────────────────────
 
 void AUDPReceiver::ResetHandPositions()
 {
